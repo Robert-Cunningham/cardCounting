@@ -3,3 +3,14 @@ body {
   padding: 0;
   font-family: sans-serif;
 }
+
+.card-set {
+  display: flex;
+  justify-content: space-around;
+  list-style-type: none;
+  border: red 1px solid;
+}
+
+.card {
+  width: 20%;
+}
