@@ -73,6 +73,12 @@ class CardController extends React.Component { //Toggles between dialog and Card
       playState: STATE_DONE,
       guessedCount: parseInt(guessedCount)
     })
+
+    if (this.state.guessedCount === this.state.correctCount) {
+      fetch("/newScore", {
+        body: JSON.stringify({"player": this.state.recentScore})
+      })
+    }
   }
 
   render() {
@@ -128,6 +134,49 @@ class CheckDialog extends React.Component {
       Count: <TextField id="count" onChange={this.handleChange} value={this.state.count}/>
       <DialogActions>
         <Button onClick={(e) => {this.props.done(this.state.count)}} color="primary">Check</Button>
+      </DialogActions>
+    </Dialog>
+    </div>
+  )}
+}
+
+class LeaderboardDialog extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      open: false,
+    }
+    this.handleOpen = this.handleOpen.bind(this)
+    this.handleClose = this.handleClose.bind(this)
+  }
+
+  componentDidMount() {
+    console.log("mounted")
+    fetch("/fake").then(data => data.json()).then((res) => {
+      this.setState({
+        leaders: res
+      })
+    })
+  }
+
+  handleOpen(e) {
+    this.setState({open: true})
+  }
+
+  handleClose(e) {
+    this.setState({open: false})
+  }
+
+  render() {return (
+    <div>
+    <Button onClick={this.handleOpen}>Leaderboard</Button>
+    <Dialog open={this.state.open}>
+    <ol>
+    {console.log("leaders", this.state.leaders)}
+    {this.state.leaders && Object.entries(this.state.leaders).map(a => {return <li> a </li>})}
+    </ol>
+      <DialogActions>
+        <Button onClick={this.handleClose} autoFocus>Done</Button>
       </DialogActions>
     </Dialog>
     </div>
@@ -207,10 +256,19 @@ class PlayDialog extends React.Component {
   render() {
     return (
     <Dialog title="Card Counting" open={this.state.open}>
-      <DialogTitle>{"Card Counting with Robert!"}</DialogTitle>
+      <DialogTitle>{"Learn to Count Cards"}</DialogTitle>
       {this.props.children}
+      <DialogContent>
+        <DialogContentText>
+        Counting cards is easy! Keep a number in your head, starting at 0. When you see a card
+        with rank between 2 and 6, subtract one. When you see a card with rank between 7 and 9, 
+        do nothing. When you see a card with rank between 10 and ace, add 1. At the end, type in
+        your running count to confirm!
+        </DialogContentText>
+      </DialogContent>
       <DialogActions>
         <SettingsDialog {...this.props}/>
+        <LeaderboardDialog />
         <Button onClick={this.playWithOptions} color="primary">Play</Button>
       </DialogActions>
     </Dialog>
