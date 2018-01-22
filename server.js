@@ -13,8 +13,8 @@ MongoClient.connect("mongodb://localhost:27017", (err, database) => {
         console.log(err)
     } else {
         db = database
-        app.listen(3001, () => {
-            console.log("Listening on 3001.")
+        app.listen(80, () => {
+            console.log("Listening on 80.")
         })
     }
 })
