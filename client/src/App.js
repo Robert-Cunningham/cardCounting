@@ -35,8 +35,8 @@ class CardController extends React.Component { //Toggles between dialog and Card
     super(props);
     this.state = {
       playState: STATE_DONE,
-      cardsToDisplay: parseInt(window.localStorage.cardsToDisplay) || 5,
-      rounds: parseInt(window.localStorage.cardsToDisplay) || 5,
+      cardsToDisplay: parseInt(window.localStorage.cardsToDisplay, 10) || 5,
+      rounds: parseInt(window.localStorage.cardsToDisplay, 10) || 5,
       recentScore: 0,
       correctCount: 10000     
     }
@@ -48,8 +48,8 @@ class CardController extends React.Component { //Toggles between dialog and Card
 
   setOptions(cardsToDisplay, rounds) {
     this.setState({
-      cardsToDisplay: parseInt(cardsToDisplay),
-      rounds: parseInt(rounds),
+      cardsToDisplay: parseInt(cardsToDisplay, 10),
+      rounds: parseInt(rounds, 10),
     })
   }
 
@@ -72,7 +72,7 @@ class CardController extends React.Component { //Toggles between dialog and Card
   check(guessedCount) {
     this.setState({
       playState: STATE_DONE,
-      guessedCount: parseInt(guessedCount)
+      guessedCount: parseInt(guessedCount, 10)
     })
 
     /*
@@ -83,17 +83,16 @@ class CardController extends React.Component { //Toggles between dialog and Card
     }
     */
 
-    if (isNaN(parseInt(window.localStorage.score))) {
+    if (isNaN(parseInt(window.localStorage.score, 10))) {
       window.localStorage.score = "1000000";
     }
 
-    window.localStorage.score = "" + Math.min(parseInt(window.localStorage.score), this.state.recentScore)
+    window.localStorage.score = "" + Math.min(parseInt(window.localStorage.score, 10), this.state.recentScore)
   }
 
   render() {
     let result = <div> </div>
-    console.log(this.state.correctCount, this.state.guessedCount)
-    if (this.state.correctCount != 10000) {
+    if (this.state.correctCount !== 10000) {
       if (this.state.correctCount === this.state.guessedCount) {
         result = <div>Congratulations! Score: {this.state.recentScore} </div>
       } else {
@@ -101,13 +100,13 @@ class CardController extends React.Component { //Toggles between dialog and Card
       }
     }
     let toDisplay = <div> </div>
-    if (this.state.playState == STATE_DONE) {
+    if (this.state.playState === STATE_DONE) {
       toDisplay = <PlayDialog play={this.start} setOptions={this.setOptions} cardsToDisplayDefault={this.state.cardsToDisplay} roundsDefault={this.state.rounds} score={this.state.correctCount === this.state.guessedCount ? this.state.recentScore : 0}>
         {result}        
       </PlayDialog>
-    } else if (this.state.playState == STATE_PLAY) {
+    } else if (this.state.playState === STATE_PLAY) {
       toDisplay = <CardDisplayer totalSets={this.state.rounds} cardsToDisplay={this.state.cardsToDisplay} onFinish={this.done} />
-    } else if (this.state.playState == STATE_CHECK) {
+    } else if (this.state.playState === STATE_CHECK) {
       toDisplay = <CheckDialog done={this.check}/>
     }
 
@@ -160,7 +159,6 @@ class LeaderboardDialog extends React.Component {
   }
 
   componentDidMount() {
-    console.log("mounted")
     fetch("/fake").then(data => data.json()).then((res) => {
       this.setState({
         leaders: res
@@ -181,7 +179,6 @@ class LeaderboardDialog extends React.Component {
     <Button onClick={this.handleOpen}>Leaderboard</Button>
     <Dialog open={this.state.open}>
     <ol>
-    {console.log("leaders", this.state.leaders)}
     Your best score: {window.localStorage.score}
     {this.state.leaders && Object.entries(this.state.leaders).map(a => {return <li> a </li>})}
     </ol>
@@ -314,7 +311,6 @@ class CardDisplayer extends React.Component {
 
   @keydown("enter")
   nextSet(event) {
-    console.log("enter")
     if (this.state.left === 0) {
       this.props.onFinish(this.state.count)
       return
@@ -352,7 +348,7 @@ function CardSet(props) {
 
 function Card(props) {
   return (
-    <img className="card" src={getFileName(props.type.rank, props.type.suit)} ></img>
+    <img className="card" src={getFileName(props.type.rank, props.type.suit)} alt={rankLookup[props.type.rank] + " of " + suitLookup[props.type.suit]}></img>
   )
 }
 
