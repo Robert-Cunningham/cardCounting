@@ -9,6 +9,7 @@ import Dialog, {
   DialogContentText,
   DialogTitle,
 } from 'material-ui/Dialog';
+import {cards} from './cards.js'
 import TextField from 'material-ui/TextField'
 
 const rankLookup = ["2","3","4","5","6","7","8","9","10","jack","queen","king","ace"]
@@ -34,8 +35,8 @@ class CardController extends React.Component { //Toggles between dialog and Card
     super(props);
     this.state = {
       playState: STATE_DONE,
-      cardsToDisplay: 5,
-      rounds: 5,
+      cardsToDisplay: parseInt(window.localStorage.cardsToDisplay) || 5,
+      rounds: parseInt(window.localStorage.cardsToDisplay) || 5,
       recentScore: 0,
       correctCount: 10000     
     }
@@ -74,11 +75,19 @@ class CardController extends React.Component { //Toggles between dialog and Card
       guessedCount: parseInt(guessedCount)
     })
 
+    /*
     if (this.state.guessedCount === this.state.correctCount) {
       fetch("/newScore", {
         body: JSON.stringify({"player": this.state.recentScore})
       })
     }
+    */
+
+    if (isNaN(parseInt(window.localStorage.score))) {
+      window.localStorage.score = "1000000";
+    }
+
+    window.localStorage.score = "" + Math.min(parseInt(window.localStorage.score), this.state.recentScore)
   }
 
   render() {
@@ -173,6 +182,7 @@ class LeaderboardDialog extends React.Component {
     <Dialog open={this.state.open}>
     <ol>
     {console.log("leaders", this.state.leaders)}
+    Your best score: {window.localStorage.score}
     {this.state.leaders && Object.entries(this.state.leaders).map(a => {return <li> a </li>})}
     </ol>
       <DialogActions>
@@ -210,6 +220,8 @@ class SettingsDialog extends React.Component {
   save(e) {
     this.props.setOptions(this.state.cardsToDisplay, this.state.rounds)
     this.setState({open: false})
+    window.localStorage.cardsToDisplay = "" + this.state.cardsToDisplay;
+    window.localStorage.rounds = "" + this.state.rounds;
   }
 
   cancel(e) {
@@ -346,7 +358,8 @@ function Card(props) {
 
 
 function getFileName(rank, suit) {
-  return (process.env.PUBLIC_URL + "/cardImages/" + rankLookup[rank] + "_of_" + suitLookup[suit] + ".png")
+  return cards[suit * 13 + rank];
+  //(process.env.PUBLIC_URL + "/cardImages/" + rankLookup[rank] + "_of_" + suitLookup[suit] + ".png")
 }
 
 export default App;
