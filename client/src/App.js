@@ -11,6 +11,7 @@ import Dialog, {
 } from 'material-ui/Dialog';
 import {cards} from './cards.js'
 import TextField from 'material-ui/TextField'
+import {BrowserRouter, Route, Link} from 'react-router-dom'
 
 const rankLookup = ["2","3","4","5","6","7","8","9","10","jack","queen","king","ace"]
 const suitLookup = ["clubs","hearts","diamonds","spades"]
@@ -152,10 +153,8 @@ class LeaderboardDialog extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      open: false,
+      open: true,
     }
-    this.handleOpen = this.handleOpen.bind(this)
-    this.handleClose = this.handleClose.bind(this)
   }
 
   componentDidMount() {
@@ -166,24 +165,15 @@ class LeaderboardDialog extends React.Component {
     })
   }
 
-  handleOpen(e) {
-    this.setState({open: true})
-  }
-
-  handleClose(e) {
-    this.setState({open: false})
-  }
-
   render() {return (
     <div>
-    <Button onClick={this.handleOpen}>Leaderboard</Button>
-    <Dialog open={this.state.open}>
+    <Dialog open={true}>
     <ol>
     Your best score: {window.localStorage.score}
     {this.state.leaders && Object.entries(this.state.leaders).map(a => {return <li> a </li>})}
     </ol>
       <DialogActions>
-        <Button onClick={this.handleClose} autoFocus>Done</Button>
+        <Button onClick={this.handleClose} autoFocus component={Link} to={'/'}>Done</Button>
       </DialogActions>
     </Dialog>
     </div>
@@ -194,13 +184,11 @@ class SettingsDialog extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      open: false,
+      open: true,
       cardsToDisplay: props.cardsToDisplayDefault,
       rounds: props.roundsDefault
     }
     this.handleSettings = this.handleSettings.bind(this)
-    this.handleOpen = this.handleOpen.bind(this)
-    this.handleClose = this.handleClose.bind(this)
     this.save = this.save.bind(this)
     this.cancel = this.cancel.bind(this)
   }
@@ -225,23 +213,14 @@ class SettingsDialog extends React.Component {
     this.setState({open: false})
   }
 
-  handleOpen(e) {
-    this.setState({open: true})
-  }
-
-  handleClose(e) {
-    this.setState({open: false})
-  }
-
   render() {return (
     <div>
-    <Button onClick={this.handleOpen}>Settings</Button>
-    <Dialog open={this.state.open}>
+    <Dialog open={true}>
       Cards per screen: <TextField id="cardsToDisplay" onChange={this.handleSettings} value={this.state.cardsToDisplay}/>
       Rounds: <TextField id="rounds" onChange={this.handleSettings} value={this.state.rounds}/>
       <DialogActions>
-        <Button onClick={this.cancel}>Cancel</Button>
-        <Button onClick={this.save} autoFocus>Save</Button>
+        <Button onClick={this.cancel} component={Link} to={'/'}>Cancel</Button>
+        <Button onClick={this.save} autoFocus component={Link} to={'/'}>Save</Button>
       </DialogActions>
     </Dialog>
     </div>
@@ -274,10 +253,12 @@ class PlayDialog extends React.Component {
         do nothing. When you see a card with rank between 10 and ace, add 1. At the end, type in
         your running count to confirm!
         </DialogContentText>
+        <Route exact path={'/settings'} render={() => <SettingsDialog {...this.props}/>} />
+        <Route exact path={'/leaderboard'} component={LeaderboardDialog} />
       </DialogContent>
       <DialogActions>
-        <SettingsDialog {...this.props}/>
-        <LeaderboardDialog />
+        <Button component={Link} to={'/leaderboard'}>Leaderboard</Button>
+        <Button component={Link} to={'/settings'}>Settings</Button>
         <Button onClick={this.playWithOptions} color="primary">Play</Button>
       </DialogActions>
     </Dialog>
