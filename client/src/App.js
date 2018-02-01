@@ -20,6 +20,8 @@ const STATE_PLAY = 1;
 const STATE_CHECK = 2;
 const STATE_DONE = 3;
 
+const NO_HIGH_SCORE = 100000;
+
 class App extends Component {
   render() {
     return (
@@ -39,7 +41,8 @@ class CardController extends React.Component { //Toggles between dialog and Card
       cardsToDisplay: parseInt(window.localStorage.cardsToDisplay, 10) || 5,
       rounds: parseInt(window.localStorage.cardsToDisplay, 10) || 5,
       recentScore: 0,
-      correctCount: 10000     
+      correctCount: 10000,
+      highScore: NO_HIGH_SCORE
     }
     this.done = this.done.bind(this)
     this.start = this.start.bind(this)
@@ -70,10 +73,20 @@ class CardController extends React.Component { //Toggles between dialog and Card
     })
   }
 
+  updateHighScore() {
+
+  }
   check(guessedCount) {
+    console.log("checking" + parseInt(guessedCount, 10))
     this.setState({
       playState: STATE_DONE,
       guessedCount: parseInt(guessedCount, 10)
+    }, () => {
+      if (this.state.guessedCount === this.state.correctCount) {
+          this.setState((prevstate) => {return {
+            highScore: Math.min(prevstate.highScore, prevstate.recentScore)
+          }})
+      }
     })
 
     /*
@@ -84,11 +97,6 @@ class CardController extends React.Component { //Toggles between dialog and Card
     }
     */
 
-    if (isNaN(parseInt(window.localStorage.score, 10))) {
-      window.localStorage.score = "1000000";
-    }
-
-    window.localStorage.score = "" + Math.min(parseInt(window.localStorage.score, 10), this.state.recentScore)
   }
 
   render() {
@@ -102,7 +110,7 @@ class CardController extends React.Component { //Toggles between dialog and Card
     }
     let toDisplay = <div> </div>
     if (this.state.playState === STATE_DONE) {
-      toDisplay = <PlayDialog play={this.start} setOptions={this.setOptions} cardsToDisplayDefault={this.state.cardsToDisplay} roundsDefault={this.state.rounds} score={this.state.correctCount === this.state.guessedCount ? this.state.recentScore : 0}>
+      toDisplay = <PlayDialog highScore={this.state.highScore} setHighScore={(val) => {this.setState({highScore: val})}} play={this.start} setOptions={this.setOptions} cardsToDisplayDefault={this.state.cardsToDisplay} roundsDefault={this.state.rounds} score={this.state.correctCount === this.state.guessedCount ? this.state.recentScore : 0}>
         {result}        
       </PlayDialog>
     } else if (this.state.playState === STATE_PLAY) {
@@ -169,11 +177,12 @@ class LeaderboardDialog extends React.Component {
     <div>
     <Dialog open={true}>
     <ol>
-    Your best score: {window.localStorage.score}
+    {this.props.highScore === NO_HIGH_SCORE ? "You have no score" : "Your best score is " + this.props.highScore}
     {this.state.leaders && Object.entries(this.state.leaders).map(a => {return <li> a </li>})}
     </ol>
       <DialogActions>
         <Button onClick={this.handleClose} autoFocus component={Link} to={'/'}>Done</Button>
+        <Button onClick={() => {this.props.setHighScore(NO_HIGH_SCORE)}}>Reset</Button>
       </DialogActions>
     </Dialog>
     </div>
@@ -254,7 +263,7 @@ class PlayDialog extends React.Component {
         your running count to confirm!
         </DialogContentText>
         <Route exact path={'/settings'} render={() => <SettingsDialog {...this.props}/>} />
-        <Route exact path={'/leaderboard'} component={LeaderboardDialog} />
+        <Route exact path={'/leaderboard'} render={() => <LeaderboardDialog {...this.props} /> }/>
       </DialogContent>
       <DialogActions>
         <Button component={Link} to={'/leaderboard'}>Leaderboard</Button>
