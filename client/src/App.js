@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import './App.css';
-import AppBar from 'material-ui/AppBar'
+//import AppBar from 'material-ui/AppBar'
+import CardCountingAppBar from './CardCountingAppBar.js'
 import keydown from 'react-keydown';
 import Button from 'material-ui/Button';
 import Dialog, {
@@ -11,7 +12,10 @@ import Dialog, {
 } from 'material-ui/Dialog';
 import {cards} from './cards.js'
 import TextField from 'material-ui/TextField'
-import {BrowserRouter, Route, Link} from 'react-router-dom'
+import {Route, Link, Switch, Redirect} from 'react-router-dom'
+import List, {ListItem, ListItemText} from 'material-ui/List'
+import {Login} from "./Login.js"
+import PermIdentityIcon from 'material-ui-icons/PermIdentity'
 
 const rankLookup = ["2","3","4","5","6","7","8","9","10","jack","queen","king","ace"]
 const suitLookup = ["clubs","hearts","diamonds","spades"]
@@ -26,10 +30,30 @@ class App extends Component {
   render() {
     return (
       <div id="parent">
-          <AppBar> Counting Cards </AppBar>
-        <CardController> </CardController>
+      <CardCountingAppBar> 
+                <Button component={Link} to="/login"> <PermIdentityIcon />Log In</Button>
+      </CardCountingAppBar>
+        <Switch>
+          <Route exact path={"/"} render={() => <Redirect to="/play" />} />
+          <Route path={"/play"} render = {() => <SiteController />} />
+          <Route path={"/login"} render = {() => <Login />} />
+        </Switch>
       </div>
     );
+  }
+}
+
+class SiteController extends React.Component {
+  constructor(props) {
+    super(props)
+  }
+
+  render() {
+    return (
+      <div>
+        <CardController />
+      </div>
+    )
   }
 }
 
@@ -40,6 +64,7 @@ class CardController extends React.Component { //Toggles between dialog and Card
       playState: STATE_DONE,
       cardsToDisplay: parseInt(window.localStorage.cardsToDisplay, 10) || 5,
       rounds: parseInt(window.localStorage.cardsToDisplay, 10) || 5,
+      name: window.localStorage.name, 
       recentScore: 0,
       correctCount: 10000,
       highScore: NO_HIGH_SCORE
@@ -48,6 +73,9 @@ class CardController extends React.Component { //Toggles between dialog and Card
     this.start = this.start.bind(this)
     this.check = this.check.bind(this)
     this.setOptions = this.setOptions.bind(this)
+    this.updateHighScore = this.updateHighScore.bind(this)
+    this.endOfGame = this.endOfGame.bind(this)
+    this.sendDataToServer = this.sendDataToServer.bind(this)
   }
 
   setOptions(cardsToDisplay, rounds) {
@@ -73,30 +101,35 @@ class CardController extends React.Component { //Toggles between dialog and Card
     })
   }
 
-  updateHighScore() {
+  endOfGame() {
+    this.sendDataToServer();
+    this.updateHighScore();
 
   }
+
+  sendDataToServer() {
+    fetch("/newScore", {
+      method: 'POST',
+      headers: new Headers({
+        "Content-Type": "application/json"
+      }),
+      body: JSON.stringify({"name": this.state.name, "correct": this.state.guessedCount === this.state.correctCount, "score": this.state.recentScore})
+    })
+  }
+
+  updateHighScore() {
+    if (this.state.guessedCount === this.state.correctCount) {
+        this.setState((prevstate) => {return {
+          highScore: Math.min(prevstate.highScore, prevstate.recentScore)
+        }})
+      }
+  }
+
   check(guessedCount) {
-    console.log("checking" + parseInt(guessedCount, 10))
     this.setState({
       playState: STATE_DONE,
       guessedCount: parseInt(guessedCount, 10)
-    }, () => {
-      if (this.state.guessedCount === this.state.correctCount) {
-          this.setState((prevstate) => {return {
-            highScore: Math.min(prevstate.highScore, prevstate.recentScore)
-          }})
-      }
-    })
-
-    /*
-    if (this.state.guessedCount === this.state.correctCount) {
-      fetch("/newScore", {
-        body: JSON.stringify({"player": this.state.recentScore})
-      })
-    }
-    */
-
+    }, this.endOfGame)
   }
 
   render() {
@@ -110,7 +143,7 @@ class CardController extends React.Component { //Toggles between dialog and Card
     }
     let toDisplay = <div> </div>
     if (this.state.playState === STATE_DONE) {
-      toDisplay = <PlayDialog highScore={this.state.highScore} setHighScore={(val) => {this.setState({highScore: val})}} play={this.start} setOptions={this.setOptions} cardsToDisplayDefault={this.state.cardsToDisplay} roundsDefault={this.state.rounds} score={this.state.correctCount === this.state.guessedCount ? this.state.recentScore : 0}>
+      toDisplay = <PlayDialog nameDefault={this.state.name} highScore={this.state.highScore} setHighScore={(val) => {this.setState({highScore: val})}} play={this.start} setOptions={this.setOptions} cardsToDisplayDefault={this.state.cardsToDisplay} roundsDefault={this.state.rounds} score={this.state.correctCount === this.state.guessedCount ? this.state.recentScore : 0}>
         {result}        
       </PlayDialog>
     } else if (this.state.playState === STATE_PLAY) {
@@ -166,7 +199,8 @@ class LeaderboardDialog extends React.Component {
   }
 
   componentDidMount() {
-    fetch("/fake").then(data => data.json()).then((res) => {
+    fetch("/leaderboardData").then(data => data.json()).then((res) => {
+      console.log(res)
       this.setState({
         leaders: res
       })
@@ -178,7 +212,7 @@ class LeaderboardDialog extends React.Component {
     <Dialog open={true}>
     <ol>
     {this.props.highScore === NO_HIGH_SCORE ? "You have no score" : "Your best score is " + this.props.highScore}
-    {this.state.leaders && Object.entries(this.state.leaders).map(a => {return <li> a </li>})}
+    {this.state.leaders && <GlobalLeaderBoard leaders={this.state.leaders} />}
     </ol>
       <DialogActions>
         <Button onClick={this.handleClose} autoFocus component={Link} to={'/'}>Done</Button>
@@ -189,13 +223,27 @@ class LeaderboardDialog extends React.Component {
   )}
 }
 
+function GlobalLeaderBoard(props) {
+  return (
+    <List>
+      {props.leaders.map(leader => {
+        return (
+          <ListItem>
+            <ListItemText primary={leader["_id"]} secondary={leader.score} />
+          </ListItem>
+        )})}
+    </List>
+  )
+}
+
 class SettingsDialog extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
       open: true,
       cardsToDisplay: props.cardsToDisplayDefault,
-      rounds: props.roundsDefault
+      rounds: props.roundsDefault,
+      name: props.nameDefault
     }
     this.handleSettings = this.handleSettings.bind(this)
     this.save = this.save.bind(this)
@@ -203,6 +251,9 @@ class SettingsDialog extends React.Component {
   }
 
   handleSettings(e) {
+    if (e.target.id === "name") {
+      this.setState({name: e.target.value})
+    }
     if (e.target.id === "cardsToDisplay") {
       this.setState({cardsToDisplay: e.target.value});
     }
@@ -216,6 +267,7 @@ class SettingsDialog extends React.Component {
     this.setState({open: false})
     window.localStorage.cardsToDisplay = "" + this.state.cardsToDisplay;
     window.localStorage.rounds = "" + this.state.rounds;
+    window.localStorage.name = "" + this.state.name;
   }
 
   cancel(e) {
@@ -225,6 +277,7 @@ class SettingsDialog extends React.Component {
   render() {return (
     <div>
     <Dialog open={true}>
+      Name: <TextField id="name" onChange={this.handleSettings} value={this.state.name}/>
       Cards per screen: <TextField id="cardsToDisplay" onChange={this.handleSettings} value={this.state.cardsToDisplay}/>
       Rounds: <TextField id="rounds" onChange={this.handleSettings} value={this.state.rounds}/>
       <DialogActions>

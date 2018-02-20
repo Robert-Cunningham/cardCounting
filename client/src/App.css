@@ -1,28 +1,26 @@
-.App {
-  text-align: center;
+title-bar {
+  margin: 200px !important;
+  color: green !important;
+  
 }
 
-.App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 80px;
+.menu {
+  flex: 1;
+  color: red;
 }
 
-.App-header {
-  background-color: #222;
-  height: 150px;
-  padding: 20px;
-  color: white;
+.title {
+  flex: 2;
+  color: purple;
 }
 
-.App-title {
-  font-size: 1.5em;
+.title-bar-contained {
+  display: flex;
+  background-color: green;
 }
 
-.App-intro {
-  font-size: large;
-}
-
-@keyframes App-logo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.LoginInterior {
+  display: flex;
+  justify-content: space-around;
+  flex-direction: column;
 }
