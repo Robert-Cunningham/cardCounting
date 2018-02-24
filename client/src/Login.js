@@ -33,7 +33,7 @@ function LoginPage(props) {
 class LoginController extends React.Component {
     constructor(props) {
         super(props)
-        this.state = {username:"", password:"", remember: false, correct: false, tried: false}
+        this.state = {username:"", password:"", remember: false, error:"", correct: false, tried: false}
         this.onLoginAttempt = this.onLoginAttempt.bind(this)
         this.onChange = this.onChange.bind(this)
         this.onNewAccount = this.onNewAccount.bind(this)
@@ -49,6 +49,12 @@ class LoginController extends React.Component {
                 username: this.state.username,
                 password: this.state.password
             })
+        }).then(resp => resp.json()).then(data => {
+            if (data.error) {
+                this.setState({tried: true, correct: false, error:data.message})
+            } else {
+                this.setState({correct: true})
+            }
         })
     }
 
@@ -66,10 +72,8 @@ class LoginController extends React.Component {
             this.setState({tried: true})
             if (data.correct) {
                 this.setState({correct: true})
-                console.log("succeeded")
             } else {
-                this.setState({correct: false})
-                console.log("failed")
+                this.setState({correct: false, error: "Incorrect username or password."})
             }
         })
     }
@@ -90,7 +94,7 @@ class LoginController extends React.Component {
         return (
             <div>
                 {this.state.correct && <Redirect to="/play" />}
-                <LoginPresenter onNewAccount={this.onNewAccount} onChange={this.onChange} failed={this.state.tried && !this.state.correct} onLoginAttempt={this.onLoginAttempt} username={this.state.username} password={this.state.password} remember={this.state.remember}/>                
+                <LoginPresenter error={this.state.error} onNewAccount={this.onNewAccount} onChange={this.onChange} failed={this.state.tried && !this.state.correct} onLoginAttempt={this.onLoginAttempt} username={this.state.username} password={this.state.password} remember={this.state.remember}/>                
             </div>
         )
     }
@@ -99,7 +103,7 @@ class LoginController extends React.Component {
 function LoginPresenter(props) {
     return (
         <div className="LoginInterior">
-        {props.failed && <div>Incorrect username or password</div>}
+        {props.failed && <div>{props.error}</div>}
             <TextField name="username" label="Username" value={props.username} onChange={props.onChange} /> <br />
             <TextField name="password" label="Password" value={props.password} onChange={props.onChange} type="password" /> <br />
             <div>

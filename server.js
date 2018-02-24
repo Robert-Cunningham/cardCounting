@@ -1,7 +1,11 @@
 const express = require('express')
 const MongoClient = require('mongodb').MongoClient
 const bodyParser = require('body-parser')
+
+import bcrypt from 'bcrypt'
 import session from 'express-session'
+
+const bcryptSaltRounds = 10
 
 let app = express()
 
@@ -44,26 +48,42 @@ app.get("/fake", (req, res) => {
 
 let countingVal = 0;
 
+function createNewAccount(username, password, callback) {
+
+    bcrypt.hash(password, bcryptSaltRounds, (err, hash) => {
+        if (err) {
+            console.log(err)
+            return
+        }
+        console.log("User account created:", username, hash)
+        db.collection('identity').save({id: username, hash: hash})
+        callback()
+    })
+}
+
 app.post("/newAccount", (req, res) => {
-    db.collection('identity').save({id: req.body.username, password: req.body.password})
-    res.send()
+
+    db.collection('identity').findOne({id: req.body.username}, (e, o) => {
+        if (o) {
+            res.send({error: true, message: "Account already exists."})
+        } else {
+            createNewAccount(req.body.username, req.body.password, () => {
+                res.send({error: false})
+            })
+        }
+    })
 })
+
 
 app.post("/auth", (req, res) => {
     console.log("looking for " + req.body.username + " and " + req.body.password)
-    db.collection('identity').findOne({id: req.body.username, password: req.body.password}, (e, o) => {
+    db.collection('identity').findOne({id: req.body.username}, (e, o) => {
         if (o) {
-            console.log(o)
-            res.send({correct: true})
-        } else {
-            res.send({correct: false})
-        }
+            bcrypt.compare(req.body.password, o.hash, (err, correct) => {
+                res.send({correct: correct})
+            })
+        } 
     })
-//    console.log(req.body.username)
-//    console.log(req.session.countingVal)
-//    req.session.countingVal = countingVal;
-//
-//    countingVal += 1;
 })
 
 app.post("/newScore", (req, res) => {
